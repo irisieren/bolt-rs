@@ -53,10 +53,10 @@ impl BoltContext {
         }
 
         unsafe extern "C" fn rust_write(_ctx: *mut sys::bt_Context, msg: *const std::ffi::c_char) {
-            if !msg.is_null() {
-                if let Ok(msg_str) = unsafe { std::ffi::CStr::from_ptr(msg) }.to_str() {
-                    print!("{}", msg_str);
-                }
+            if !msg.is_null()
+                && let Ok(msg_str) = unsafe { std::ffi::CStr::from_ptr(msg) }.to_str()
+            {
+                print!("{}", msg_str);
             }
         }
 
@@ -104,11 +104,8 @@ impl BoltContext {
             let Some(path) = (if path.is_null() { None } else { Some(path) }) else {
                 return std::ptr::null_mut();
             };
-            let Some(out_handle) = (if out_handle.is_null() {
-                None
-            } else {
-                Some(out_handle)
-            }) else {
+
+            let Some(out_handle) = (!out_handle.is_null()).then_some(out_handle) else {
                 return std::ptr::null_mut();
             };
 
