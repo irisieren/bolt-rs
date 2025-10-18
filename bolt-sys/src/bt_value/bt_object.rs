@@ -1,6 +1,8 @@
 use crate::{
     ArgError, BoltContext,
-    bt_value::{CallSignature, FromBoltValue, MakeBoltValue, MakeBoltValueWithContext, Value, ValueType},
+    bt_value::{
+        CallSignature, FromBoltValue, MakeBoltValue, MakeBoltValueWithContext, Value, ValueType,
+    },
     sys::{self, *},
 };
 use std::{
@@ -440,7 +442,11 @@ impl FromBoltValue for Function {
         match obj {
             BoltObject::Function(fn_obj) => Ok(fn_obj),
             _ => Err(ArgError::TypeGuard {
-                expected: ValueType::Function(CallSignature { args: vec![], return_ty: Type::from_raw(std::ptr::null_mut()).unwrap_or_else(|| panic!("null type")) }),
+                expected: ValueType::Function(CallSignature {
+                    args: vec![],
+                    return_ty: Type::from_raw(std::ptr::null_mut())
+                        .unwrap_or_else(|| panic!("null type")),
+                }),
                 actual: ValueType::None,
             }),
         }
