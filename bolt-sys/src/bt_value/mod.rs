@@ -141,7 +141,7 @@ impl ValueType {
                         }
                     })
                 } else {
-                    Some(ValueType::None)
+                    None
                 }
             },
         ]
