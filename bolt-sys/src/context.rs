@@ -194,7 +194,7 @@ impl BoltContext {
 
     /// Resolves the type of a bt_Value
     pub fn resolve_type(&mut self, value: &Value) -> ValueType {
-        todo!()
+        ValueType::from_value(value.as_raw())
     }
 
     pub fn from_raw(ptr: *mut sys::bt_Context) -> Self {
