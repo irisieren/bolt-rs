@@ -111,29 +111,42 @@ pub enum ValueType {
 impl ValueType {
     /// A slow exhaustive check to see what type a bt_Value is
     pub fn from_value(val: bt_Value) -> Self {
-        unsafe {
-            if crate::sys::bt_is_null(val) != 0 {
-                return ValueType::Null;
-            }
-            if crate::sys::bt_is_bool(val) != 0 {
-                return ValueType::Bool;
-            }
-            if crate::sys::bt_is_number(val) != 0 {
-                return ValueType::Number;
-            }
-            if crate::sys::bt_is_enum_val(val) != 0 {
-                return ValueType::Enum(todo!());
-            }
-
-            if let Some(obj_ptr) = NonNull::new(sys::bt_object(val))
-                && crate::sys::bt_is_object(val) != 0
-            {
-                let mask = obj_ptr.as_ref().mask;
-                let object_type = ObjectType::from_mask(mask);
-                return todo!();
-            }
-
-            ValueType::None
+        macro_rules! test {
+            ($pred:expr => $t:expr) => {
+                |v| unsafe { ($pred(v) != 0).then_some($t) }
+            };
         }
+
+        [
+            test!(crate::sys::bt_is_null => ValueType::Null),
+            test!(crate::sys::bt_is_bool => ValueType::Bool),
+            test!(crate::sys::bt_is_number => ValueType::Number),
+            test!(crate::sys::bt_is_enum_val => ValueType::Enum(todo!())),
+            |v| unsafe {
+                if crate::sys::bt_is_object(v) != 0 {
+                    NonNull::new(sys::bt_object(v)).map(|obj| {
+                        match ObjectType::from_mask(obj.as_ref().mask) {
+                            ObjectType::None => ValueType::None,
+                            ObjectType::Type => ValueType::Type,
+                            ObjectType::String => ValueType::String,
+                            ObjectType::Module => ValueType::Module,
+                            ObjectType::Import => ValueType::Import,
+                            ObjectType::Function => ValueType::Function(todo!()),
+                            ObjectType::NativeFunction => ValueType::NativeFunction(todo!()),
+                            ObjectType::Closure => ValueType::Closure(todo!()),
+                            ObjectType::Array => ValueType::Array(todo!()),
+                            ObjectType::Table => ValueType::Table(todo!()),
+                            ObjectType::UserData => ValueType::UserData,
+                            ObjectType::Annotation => ValueType::Annotation,
+                        }
+                    })
+                } else {
+                    Some(ValueType::None)
+                }
+            },
+        ]
+        .iter()
+        .find_map(|f| f(val))
+        .unwrap_or(ValueType::None)
     }
 }
