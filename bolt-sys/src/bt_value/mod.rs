@@ -5,7 +5,7 @@ use bt_object::{ObjectType, Type};
 use crate::{
     ArgError, BoltContext,
     bt_object::BoltObject,
-    sys::{self, bt_Object, bt_Value},
+    sys::{self, bt_Value},
 };
 
 pub mod bt_object;
