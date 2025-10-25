@@ -117,7 +117,7 @@ pub struct Import {
 pub struct Function {
     ptr: NonNull<bt_Fn>,
     /// Function signature type if available
-    signature: Option<NonNull<bt_Type>>,
+    pub signature: Option<NonNull<bt_Type>>,
 }
 
 #[derive(Debug)]
@@ -143,6 +143,7 @@ impl NativeFunction {
 #[derive(Debug)]
 pub struct Closure {
     ptr: NonNull<bt_Closure>,
+    pub func: Option<NonNull<bt_Fn>>,
     /// Number of upvalues
     num_upvalues: u32,
 }
@@ -230,6 +231,7 @@ impl BoltObject {
                 let closure = unsafe { &*ptr.as_ptr() };
                 BoltObject::Closure(Closure {
                     ptr,
+                    func: NonNull::new(closure.fn_),
                     num_upvalues: closure.num_upv,
                 })
             }),

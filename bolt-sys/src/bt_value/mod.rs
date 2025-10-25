@@ -1,10 +1,11 @@
-use std::{collections::HashMap, ffi::CString, ptr::NonNull};
+use std::{collections::HashMap, ffi::CString, fmt::Pointer, ptr::NonNull};
 
 use bt_object::{ObjectType, Type};
 
 use crate::{
     ArgError, BoltContext,
-    sys::{self, bt_Value},
+    bt_object::BoltObject,
+    sys::{self, bt_Object, bt_Value},
 };
 
 pub mod bt_object;
@@ -64,6 +65,20 @@ pub struct CallSignature {
 }
 
 impl CallSignature {
+    fn from_type(t: &Type) -> Self {
+        unsafe {
+            let sig = &(*t.as_raw()).as_.fn_;
+
+            CallSignature {
+                args: std::slice::from_raw_parts(sig.args.elements, sig.args.length as usize)
+                    .iter()
+                    .map(|&arg| Type::from_raw(arg).unwrap())
+                    .collect(),
+                return_ty: Type::from_raw(sig.return_type).unwrap(),
+            }
+        }
+    }
+
     pub fn make_type(&self, ctx: &mut BoltContext) -> Type {
         unsafe {
             let mut arg_ptrs: Vec<_> = self.args.iter().map(|t| t.as_raw()).collect();
@@ -109,7 +124,37 @@ pub enum ValueType {
 }
 
 impl ValueType {
-    /// A slow exhaustive check to see what type a bt_Value is
+    fn from_object(val: bt_Value) -> Self {
+        unsafe {
+            if let Some(mut obj) = NonNull::new(sys::bt_object(val)) {
+                match BoltObject::from_raw(obj.as_mut()).unwrap() {
+                    BoltObject::None => ValueType::None,
+                    BoltObject::Type(_) => ValueType::Type,
+                    BoltObject::String(_) => ValueType::String,
+                    BoltObject::Module(_) => ValueType::Module,
+                    BoltObject::Import(_) => ValueType::Import,
+                    BoltObject::Function(f) => f.signature.map_or(ValueType::None, |mut cs| {
+                        ValueType::Function(CallSignature::from_type(
+                            &Type::from_raw(cs.as_mut()).unwrap(),
+                        ))
+                    }),
+                    BoltObject::NativeFunction(_) => ValueType::NativeFunction(todo!()),
+                    BoltObject::Closure(c) => c.func.map_or(ValueType::None, |mut f| {
+                        ValueType::Function(CallSignature::from_type(
+                            &Type::from_raw((*f.as_ptr()).signature).unwrap(),
+                        ))
+                    }),
+                    BoltObject::Array(_) => todo!(),
+                    BoltObject::Table(_) => todo!(),
+                    BoltObject::UserData(_) => ValueType::UserData,
+                    BoltObject::Annotation(_) => ValueType::Annotation,
+                }
+            } else {
+                ValueType::None
+            }
+        }
+    }
+
     pub fn from_value(val: bt_Value) -> Self {
         unsafe {
             match () {
@@ -119,23 +164,7 @@ impl ValueType {
                 _ if crate::sys::bt_is_enum_val(val) != 0 => {
                     ValueType::Enum(crate::sys::bt_get_enum_val(val))
                 }
-                _ if crate::sys::bt_is_object(val) != 0 => NonNull::new(sys::bt_object(val))
-                    .map_or(ValueType::None, |obj| {
-                        match ObjectType::from_mask(obj.as_ref().mask) {
-                            ObjectType::None => ValueType::None,
-                            ObjectType::Type => ValueType::Type,
-                            ObjectType::String => ValueType::String,
-                            ObjectType::Module => ValueType::Module,
-                            ObjectType::Import => ValueType::Import,
-                            ObjectType::Function => ValueType::Function(todo!()),
-                            ObjectType::NativeFunction => ValueType::NativeFunction(todo!()),
-                            ObjectType::Closure => ValueType::Closure(todo!()),
-                            ObjectType::Array => ValueType::Array(todo!()),
-                            ObjectType::Table => ValueType::Table(todo!()),
-                            ObjectType::UserData => ValueType::UserData,
-                            ObjectType::Annotation => ValueType::Annotation,
-                        }
-                    }),
+                _ if crate::sys::bt_is_object(val) != 0 => Self::from_object(val),
                 _ => ValueType::None,
             }
         }
