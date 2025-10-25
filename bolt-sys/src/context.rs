@@ -318,20 +318,50 @@ impl BoltContext {
         unsafe { sys::bt_gc_get_next_cycle(self.ctx) }
     }
 
+    pub fn set_next_cycle(&self, next_cycle: usize) {
+        unsafe {
+            sys::bt_gc_set_next_cycle(self.ctx, next_cycle);
+        }
+    }
+
     pub fn min_size(&self) -> usize {
         unsafe { sys::bt_gc_get_min_size(self.ctx) }
+    }
+
+    pub fn set_min_size(&self, min_size: usize) {
+        unsafe {
+            sys::bt_gc_set_min_size(self.ctx, min_size);
+        }
     }
 
     pub fn grey_cap(&self) -> u32 {
         unsafe { sys::bt_gc_get_grey_cap(self.ctx) }
     }
 
+    pub fn set_grey_cap(&self, grey_cap: u32) {
+        unsafe {
+            sys::bt_gc_set_grey_cap(self.ctx, grey_cap);
+        }
+    }
+
     pub fn growth_pct(&self) -> usize {
         unsafe { sys::bt_gc_get_growth_pct(self.ctx) }
     }
 
+    pub fn set_growth_pct(&self, growth_pct: usize) {
+        unsafe {
+            sys::bt_gc_set_growth_pct(self.ctx, growth_pct);
+        }
+    }
+
     pub fn pause_growth_pct(&self) -> usize {
         unsafe { sys::bt_gc_get_pause_growth_pct(self.ctx) }
+    }
+
+    pub fn set_pause_growth_pct(&self, growth_pct: usize) {
+        unsafe {
+            sys::bt_gc_set_pause_growth_pct(self.ctx, growth_pct);
+        }
     }
 
     pub fn open_all_std(&mut self) {
