@@ -126,7 +126,7 @@ pub enum ValueType {
 impl ValueType {
     fn from_object(val: bt_Value) -> Self {
         unsafe {
-            if let Some(mut obj) = NonNull::new(sys::bt_object(val)) {
+            NonNull::new(sys::bt_object(val)).map_or(ValueType::None, |mut obj| {
                 match BoltObject::from_raw(obj.as_mut()).unwrap() {
                     BoltObject::None => ValueType::None,
                     BoltObject::Type(_) => ValueType::Type,
@@ -139,7 +139,7 @@ impl ValueType {
                         ))
                     }),
                     BoltObject::NativeFunction(_) => ValueType::NativeFunction(todo!()),
-                    BoltObject::Closure(c) => c.func.map_or(ValueType::None, |mut f| {
+                    BoltObject::Closure(c) => c.func.map_or(ValueType::None, |f| {
                         ValueType::Function(CallSignature::from_type(
                             &Type::from_raw((*f.as_ptr()).signature).unwrap(),
                         ))
@@ -149,9 +149,7 @@ impl ValueType {
                     BoltObject::UserData(_) => ValueType::UserData,
                     BoltObject::Annotation(_) => ValueType::Annotation,
                 }
-            } else {
-                ValueType::None
-            }
+            })
         }
     }
 
