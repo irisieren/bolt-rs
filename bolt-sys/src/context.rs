@@ -314,6 +314,26 @@ impl BoltContext {
         self.ctx
     }
 
+    pub fn next_cycle(&self) -> usize {
+        unsafe { sys::bt_gc_get_next_cycle(self.ctx) }
+    }
+
+    pub fn min_size(&self) -> usize {
+        unsafe { sys::bt_gc_get_min_size(self.ctx) }
+    }
+
+    pub fn grey_cap(&self) -> u32 {
+        unsafe { sys::bt_gc_get_grey_cap(self.ctx) }
+    }
+
+    pub fn growth_pct(&self) -> usize {
+        unsafe { sys::bt_gc_get_growth_pct(self.ctx) }
+    }
+
+    pub fn pause_growth_pct(&self) -> usize {
+        unsafe { sys::bt_gc_get_pause_growth_pct(self.ctx) }
+    }
+
     pub fn open_all_std(&mut self) {
         unsafe {
             sys::boltstd_open_all(self.ctx);
