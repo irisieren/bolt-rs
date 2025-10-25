@@ -144,7 +144,7 @@ impl ValueType {
                             &Type::from_raw((*f.as_ptr()).signature).unwrap(),
                         ))
                     }),
-                    BoltObject::Array(_) => todo!(),
+                    BoltObject::Array(arr) => ValueType::Array(arr.items),
                     BoltObject::Table(_) => todo!(),
                     BoltObject::UserData(_) => ValueType::UserData,
                     BoltObject::Annotation(_) => ValueType::Annotation,

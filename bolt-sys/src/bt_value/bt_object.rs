@@ -151,10 +151,13 @@ pub struct Closure {
 #[derive(Debug)]
 pub struct Array {
     ptr: NonNull<bt_Array>,
+
+    /// Array items
+    pub items: Vec<ValueType>,
     /// Array length
-    length: u32,
+    pub length: u32,
     /// Array capacity
-    capacity: u32,
+    pub capacity: u32,
 }
 
 #[derive(Debug)]
@@ -237,8 +240,15 @@ impl BoltObject {
             }),
             ObjectType::Array => NonNull::new(ptr as *mut bt_Array).map(|ptr| {
                 let array = unsafe { &*ptr.as_ptr() };
+                let items = unsafe {
+                    std::slice::from_raw_parts(array.items, array.length as usize)
+                        .iter()
+                        .map(|&item| ValueType::from_value(item))
+                        .collect()
+                };
                 BoltObject::Array(Array {
                     ptr,
+                    items,
                     length: array.length,
                     capacity: array.capacity,
                 })
