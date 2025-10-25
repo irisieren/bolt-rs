@@ -91,7 +91,7 @@ pub enum ValueType {
     Null,
     Bool,
     Number,
-    Enum(BoltEnum),
+    Enum(u32),
     /// None Object - distinct from Null
     None,
     /// Type Signature Object
@@ -111,20 +111,16 @@ pub enum ValueType {
 impl ValueType {
     /// A slow exhaustive check to see what type a bt_Value is
     pub fn from_value(val: bt_Value) -> Self {
-        macro_rules! test {
-            ($pred:expr => $t:expr) => {
-                |v| unsafe { ($pred(v) != 0).then_some($t) }
-            };
-        }
-
-        [
-            test!(crate::sys::bt_is_null => ValueType::Null),
-            test!(crate::sys::bt_is_bool => ValueType::Bool),
-            test!(crate::sys::bt_is_number => ValueType::Number),
-            test!(crate::sys::bt_is_enum_val => ValueType::Enum(todo!())),
-            |v| unsafe {
-                if crate::sys::bt_is_object(v) != 0 {
-                    NonNull::new(sys::bt_object(v)).map(|obj| {
+        unsafe {
+            match () {
+                _ if crate::sys::bt_is_null(val) != 0 => ValueType::Null,
+                _ if crate::sys::bt_is_bool(val) != 0 => ValueType::Bool,
+                _ if crate::sys::bt_is_number(val) != 0 => ValueType::Number,
+                _ if crate::sys::bt_is_enum_val(val) != 0 => {
+                    ValueType::Enum(crate::sys::bt_get_enum_val(val))
+                }
+                _ if crate::sys::bt_is_object(val) != 0 => NonNull::new(sys::bt_object(val))
+                    .map_or(ValueType::None, |obj| {
                         match ObjectType::from_mask(obj.as_ref().mask) {
                             ObjectType::None => ValueType::None,
                             ObjectType::Type => ValueType::Type,
@@ -139,14 +135,9 @@ impl ValueType {
                             ObjectType::UserData => ValueType::UserData,
                             ObjectType::Annotation => ValueType::Annotation,
                         }
-                    })
-                } else {
-                    None
-                }
-            },
-        ]
-        .iter()
-        .find_map(|f| f(val))
-        .unwrap_or(ValueType::None)
+                    }),
+                _ => ValueType::None,
+            }
+        }
     }
 }
