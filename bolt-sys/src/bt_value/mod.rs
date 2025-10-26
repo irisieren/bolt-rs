@@ -69,12 +69,12 @@ impl CallSignature {
         unsafe {
             let sig = &(*t.as_raw()).as_.fn_;
 
-            CallSignature {
+            Self {
                 args: std::slice::from_raw_parts(sig.args.elements, sig.args.length as usize)
                     .iter()
-                    .map(|&arg| Type::from_raw(arg).unwrap())
+                    .map(|&arg| Type::from_raw(arg).expect("Bad argument in call signature"))
                     .collect(),
-                return_ty: Type::from_raw(sig.return_type).unwrap(),
+                return_ty: Type::from_raw(sig.return_type).expect("Bad return type"),
             }
         }
     }
